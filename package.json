@@ -1,0 +1,39 @@
+{
+  "name": "@softeneers/feature-structure-creator",
+  "version": "1.0.0",
+  "description": "Scaffold a feature dossier on a canonical 8-section schema — a dense .md (AI source of truth) + generated .html (human view).",
+  "type": "module",
+  "bin": {
+    "feature-structure-creator": "./scripts/create.mjs"
+  },
+  "scripts": {
+    "test": "node scripts/self-test.mjs",
+    "self-test": "node scripts/self-test.mjs"
+  },
+  "files": [
+    "scripts"
+  ],
+  "keywords": [
+    "scaffold",
+    "feature",
+    "documentation",
+    "ai",
+    "generator"
+  ],
+  "author": "Softeneers <damian.tudor03@gmail.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tunder007/feature-structure-creator.git"
+  },
+  "homepage": "https://github.com/tunder007/feature-structure-creator#readme",
+  "bugs": {
+    "url": "https://github.com/tunder007/feature-structure-creator/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

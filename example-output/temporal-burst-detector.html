@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Temporal Burst Detector — LUMEN feature</title>
+<style>
+  :root{--bg:#0b0f14;--panel:#121821;--line:#243140;--ink:#e6edf3;--muted:#9fb0c0;--faint:#6f8298;--blue:#58a6ff;--violet:#a371f7;--green:#3fb950;--amber:#d29922}
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b0f14,#0d131b);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 22px 80px}
+  a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#0e141c;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cdd9e5}
+  pre{background:#0e141c;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font:12.5px/1.5 ui-monospace,Menlo,monospace;color:#cdd9e5}
+  pre code{background:none;border:none;padding:0}
+  h1{font-size:29px;margin:0 0 6px;letter-spacing:-.5px}
+  h2{font-size:20px;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:22px 0 8px;color:#cdd9e5}
+  p{margin:10px 0}.sub{color:var(--muted);font-size:14px}.meta{color:var(--faint);font-size:13px;margin-top:8px}
+  .badges{margin:12px 0 4px}.badge{display:inline-block;font-size:12px;border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:3px 11px;margin:3px 6px 3px 0}
+  .badge.g{border-color:rgba(88,166,255,.5);color:var(--blue)}.badge.s{border-color:rgba(163,113,247,.5);color:var(--violet)}
+  ul{margin:10px 0;padding-left:22px}li{margin:5px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  th,td{text-align:left;padding:8px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  tbody tr:hover{background:rgba(88,166,255,.04)}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--violet);border-radius:10px;padding:13px 16px;margin:16px 0;font-size:14px}
+  .back{display:inline-block;margin:0 0 8px;font-size:13px}
+  .foot{color:var(--faint);font-size:13px;border-top:1px solid var(--line);margin-top:42px;padding-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../index.html">&larr; All features</a>
+  <h1>Temporal Burst Detector</h1>
+  <div class="sub">Flags sub-minute co-posting bursts as the cheap first screen that feeds the behavioural coordination scorer — the <code>co-timing</code> signal's data source.</div>
+  <div class="badges"><span class="badge g">Detection Engine</span><span class="badge s">Status: Specified only</span></div>
+  <div class="note"><b>About these two files.</b> The <code>temporal-burst-detector.md</code> is the AI-optimized source of truth; this <code>temporal-burst-detector.html</code> is the human view generated from it. Convention: <b>.md = AI optimization, .html = human view.</b></div>
+  <h2>Summary</h2>
+  <p>The Temporal Burst Detector is the cheapest stage in LUMEN's cost-scaled pipeline: it scans a window of posts for <strong>sub-minute co-posting bursts</strong> — many accounts emitting near-identical content inside a few seconds, faster than independent people plausibly act. It produces the <code>co-timing</code> signal reading that the behavioural coordination scorer consumes. It is content-free and identity-free by construction: it counts <em>events in time</em>, never who posted them. Today its values come from the deterministic mock engine; a real implementation would compute them from ingestion timestamps. Crucially it carries <strong>no verdict and no threshold</strong> — it emits a 0–100 value and a plain-language note; convergence and caps live one layer down in scoring.</p>
+  <h2>What it does / mechanics</h2>
+  <ul><li><strong>Buckets a window's posts by timestamp</strong> into fixed-width intervals (default 60s) and finds the densest interval.</li><li><strong>Computes a burst value (0–100)</strong> from how far the densest interval's count exceeds the window's baseline rate — high when a spike is sharp and narrow, low when posting is spread out.</li><li><strong>Emits a single <code>SignalReading</code></strong> <code>{ id: "co-timing", value, note }</code>, where <code>note</code> describes the aggregate ("202 posts in 41 seconds vs. a baseline of ~6/min") — never an account name.</li><li><strong>Stays a screen, not a verdict:</strong> a high burst value alone never produces a high coordination score; the scorer requires 3+ signals to converge (floor 60) before escalating.</li><li><strong>Abstains gracefully:</strong> windows below a minimum post count return a low value with a "insufficient volume" note rather than a false spike.</li></ul>
+  <h2>How it is built (implementation)</h2>
+  <p>Specified against the data contract; the value is currently supplied by the fake engine.</p>
+  <p>The reading slots into the existing <code>SignalReading</code> type and is keyed by the taxonomy id <code>co-timing</code>:</p>
+  <pre><code>// domain/study.ts (existing contract)
+export type SignalReading = { id: string; value: number; note: string };
+
+// a real detector would expose:
+export function detectBurst(timestamps: number[], bucketMs = 60_000): SignalReading {
+  // bucket → densest interval → value vs. baseline; pure, deterministic, identity-free
+}</code></pre>
+  <p><strong>Honest status:</strong> the <code>co-timing</code> id, its branch (Coordination), and the <code>SignalReading</code> shape are real, typed domain data; the <code>detectBurst</code> function above is <strong>specified only</strong>. Today <code>Study.readings</code> / <code>AnalysisResult.readings</code> carry hardcoded <code>co-timing</code> values from <code>engine/analyze.ts</code>.</p>
+  <h2>Data-contract touchpoints</h2>
+  <ul><li><strong>Reads / defines:</strong> emits one <code>SignalReading { id: "co-timing", value, note }</code> (<code>domain/study.ts</code>); joins to the taxonomy <code>SignalDef</code> for <code>co-timing</code> (<code>domain/signals.ts</code>).</li><li><strong>Feeds:</strong> the Coordination branch score (<code>branchScore</code>) and <code>convergeCount</code> (feature 02 — Behavioural Coordination Scorer; feature 05 — Bands &amp; Convergence).</li><li><strong>Integration seam:</strong> a real backend computes <code>value</code> from the ingestion row's <code>timestamp</code> field (<code>03-working/MVP-SCENARIO.md</code> schema) and writes it into <code>Study.readings</code>; nothing else in the frontend changes. See <a href="../../lumen-docs/04-architecture-and-data/04-DATA-CONTRACT.md"><code>../../lumen-docs/04-architecture-and-data/04-DATA-CONTRACT.md</code></a>.</li></ul>
+  <h2>Model B / rights notes</h2>
+  <ul><li><strong>Patterns, not people.</strong> The detector consumes timestamps only; its <code>note</code> reports aggregate counts, never account identities — "describe, never enforce" holds by construction.</li><li><strong>No behavioural signal, no verdict.</strong> It is one signal among twelve; convergence (3+ ≥ 60) and caps in the scorer prevent a single burst from manufacturing a CIB verdict.</li><li><strong>Model B fit.</strong> The 0–100 value is one of the calibrated, uncertainty-bearing numbers LUMEN publishes autonomously; accountability is external audit + rectification, not a per-output human gate.</li><li><strong>Protects organic spikes.</strong> A genuine breaking-news surge can co-time; that is why a high burst value alone is insufficient and the organic counter-signal layer can suppress it.</li></ul>
+  <h2>Key parameters / values</h2>
+  <table><thead><tr><th>Parameter</th><th>Value</th><th>Source</th></tr></thead><tbody><tr><td>Signal id</td><td><code>co-timing</code></td><td><code>domain/signals.ts</code></td></tr><tr><td>Branch</td><td>Coordination</td><td><code>domain/branches.ts</code></td></tr><tr><td>Bucket width</td><td><code>60_000</code> ms (default)</td><td><code>detectBurst</code> (specified)</td></tr><tr><td>Convergence floor</td><td><code>60</code> (shared)</td><td><code>domain/scoring.ts:7</code></td></tr><tr><td>Value range</td><td><code>0</code>–<code>100</code></td><td><code>SignalReading.value</code></td></tr></tbody></table>
+  <h2>Related features</h2>
+  <ul><li><a href="../02-behavioural-coordination-scorer/behavioural-coordination-scorer.md">02 — Behavioural Coordination Scorer</a> — consumes the <code>co-timing</code> value into the Coordination branch score and the convergence rule.</li><li><a href="../03-signal-taxonomy/signal-taxonomy.md">03 — Signal Taxonomy</a> — defines the <code>co-timing</code> <code>SignalDef</code> this detector populates.</li><li><a href="../04-cost-scaled-pipeline-and-gates/cost-scaled-pipeline-and-gates.md">04 — Cost-Scaled Pipeline &amp; Gates</a> — the staged pipeline whose cheap first screen this detector is.</li><li><a href="../06-organic-counter-signal-layer/organic-counter-signal-layer.md">06 — Organic Counter-Signal Layer</a> — can suppress a burst value when a public-event marker is present.</li></ul>
+  <h2>References</h2>
+  <ul><li><a href="../../lumen-docs/04-architecture-and-data/04-DATA-CONTRACT.md"><code>../../lumen-docs/04-architecture-and-data/04-DATA-CONTRACT.md</code></a> — the <code>SignalReading</code> contract and the repository seam this detector writes through.</li><li><a href="../../lumen-docs/05-app-mockup/domain/signals.ts"><code>../../lumen-docs/05-app-mockup/domain/signals.ts</code></a> — the <code>co-timing</code> <code>SignalDef</code> (id, name, branch, plain gloss).</li><li><a href="../../lumen-docs/06-grounding/disinfo-cib-detection-tree/extract.html"><code>../../lumen-docs/06-grounding/disinfo-cib-detection-tree/extract.html</code></a> — EU DisinfoLab "similar posting timestamps" symptom this detector operationalises.</li></ul>
+  <div class="foot">LUMEN feature dossier — generated by the Feature-structure creator skill. Edit the <code>.md</code> and re-generate; do not hand-edit this file.</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feature-structure creator — skill (human operator guide)</title>
+<style>
+  :root{--bg:#0b0f14;--panel:#121821;--line:#243140;--ink:#e6edf3;--muted:#9fb0c0;--faint:#6f8298;--blue:#58a6ff;--violet:#a371f7;--green:#3fb950;--amber:#d29922}
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b0f14,#0d131b);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 22px 80px}
+  a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+  code{background:#0e141c;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cdd9e5}
+  pre{background:#0e141c;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow:auto;font:12.5px/1.5 ui-monospace,Menlo,monospace;color:#cdd9e5}
+  h1{font-size:29px;margin:0 0 6px;letter-spacing:-.5px}h2{font-size:20px;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}h3{font-size:16px;margin:22px 0 8px;color:#cdd9e5}
+  p{margin:10px 0}.sub{color:var(--muted);font-size:14px}.meta{color:var(--faint);font-size:13px;margin-top:8px}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--violet);border-radius:10px;padding:13px 16px;margin:16px 0;font-size:14px}
+  .prob{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:13px 16px;margin:16px 0;font-size:14px;color:var(--muted)}
+  .pills span{display:inline-block;font-size:12px;border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:3px 11px;margin:3px 5px 3px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}th,td{text-align:left;padding:8px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}tbody tr:hover{background:rgba(88,166,255,.04)}td.c{text-align:center}
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:16px 0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;border-left:3px solid var(--blue)}
+  .card.w{border-left-color:var(--violet)}
+  .card h4{margin:0 0 4px;font-size:15px;display:flex;gap:8px;align-items:center}.card .n{font-size:11px;color:var(--faint);font-weight:700;background:#0e141c;border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+  .card .w-tag{font-size:10px;color:#d2a8ff;border:1px solid rgba(163,113,247,.4);border-radius:5px;padding:1px 6px}.card p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+  ul.clean{list-style:none;padding:0;margin:10px 0}ul.clean li{padding:6px 0 6px 24px;position:relative;border-bottom:1px solid rgba(36,49,64,.5);font-size:14px}ul.clean li:last-child{border-bottom:0}
+  li.ok::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}li.dot::before{content:"◆";position:absolute;left:0;color:var(--blue);font-size:9px;top:11px}
+  .foot{color:var(--faint);font-size:13px;border-top:1px solid var(--line);margin-top:42px;padding-top:16px}
+  @media(max-width:740px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Feature-structure creator</h1>
+  <div class="sub">Human operator guide. Scaffolds a new feature dossier on the proven
+  <b>lumen-features 8-section schema</b> — a dense <code>&lt;slug&gt;.md</code> (AI source of truth)
+  plus a generated <code>&lt;slug&gt;.html</code> (human view) in a numbered <code>NN-&lt;slug&gt;/</code>
+  folder — and keeps <code>FEATURES.md</code> in sync. Where the Deterministic Checker
+  <i>measures</i> a catalog's uniformity, this skill <i>produces</i> dossiers that pass that check
+  by construction.</div>
+  <div class="meta">Status: built (self-test passing) · Targets: Claude Code · Codex · Cursor</div>
+
+  <div class="note"><b>About these two files.</b> <code>README.md</code> is the AI-optimized source of truth;
+  this <code>README.html</code> is the human view generated from it. Convention: <b>.md = AI optimization,
+  .html = human view.</b></div>
+
+  <h2>The problem it solves</h2>
+  <div class="prob">LUMEN's feature catalog scored <b>9/9</b> on uniformity because all 20 dossiers share the
+  <b>exact same 8 H2 headings in the same order</b>, slugs are predictable, and numbering is gap-free.
+  Authoring by hand invited the drift the benchmark found: <b>three different metadata-header formats</b>
+  (16 / 2 / 2) and <b>broken Related-features links</b>. This skill removes the drift at the source —
+  a generator that can only emit the canonical schema, with one metadata syntax, and that
+  <b>refuses to write</b> a dossier that fails validation.</div>
+
+  <h2>What it does — 6 functionalities</h2>
+  <p class="sub">01 holds the schema and renders the <code>.md</code>; 02 derives slug + next number;
+  03 writes the <code>.md</code>; 04 generates the <code>.html</code> from it; 05 updates the index;
+  06 validates and gates <code>--write</code>. Each has its own doc under <code>functionalities/</code>.</p>
+  <div class="cards">
+    <div class="card"><h4><span class="n">01</span> Schema template</h4><p>The canonical 8-section schema as the single source of truth; renders the dossier <code>.md</code> deterministically.</p></div>
+    <div class="card"><h4><span class="n">02</span> Slug &amp; numbering</h4><p>Kebab slug from the name + the next contiguous <code>NN</code>; reuses the number if the slug already exists.</p></div>
+    <div class="card w"><h4><span class="n">03</span> Markdown generation <span class="w-tag">writes</span></h4><p>Writes <code>NN-&lt;slug&gt;/&lt;slug&gt;.md</code> — the AI source of truth — from the schema renderer.</p></div>
+    <div class="card w"><h4><span class="n">04</span> HTML generation <span class="w-tag">writes</span></h4><p>Generates <code>&lt;slug&gt;.html</code> <i>from</i> the <code>.md</code> so constants never diverge; dark theme, self-contained.</p></div>
+    <div class="card w"><h4><span class="n">05</span> Index &amp; manifest update <span class="w-tag">writes</span></h4><p>Appends one catalog row to <code>FEATURES.md</code> (and a manifest entry if present); idempotent.</p></div>
+    <div class="card"><h4><span class="n">06</span> Validation <span class="w-tag">gate</span></h4><p>Asserts the 8 sections in order + one metadata syntax + no self-reference; a FAIL blocks <code>--write</code>.</p></div>
+  </div>
+
+  <h2>Expected input</h2>
+  <table>
+    <thead><tr><th>Input</th><th>Required</th><th>Default</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>"&lt;Feature Name&gt;"</code></td><td>yes</td><td>—</td><td>First positional arg; derives title + slug.</td></tr>
+      <tr><td><code>--features-dir</code></td><td>no</td><td><code>.</code></td><td>The catalog root to scan + write into.</td></tr>
+      <tr><td><code>--group</code></td><td>no</td><td>TODO placeholder</td><td>The dossier's <code>**Group:**</code> (e.g. Detection Engine).</td></tr>
+      <tr><td><code>--status</code></td><td>no</td><td>Specified only (TODO)</td><td>The dossier's <code>**Status:**</code>.</td></tr>
+      <tr><td><code>--scope</code></td><td>no</td><td>TODO placeholder</td><td>The one-line scope under the title.</td></tr>
+      <tr><td><code>--write</code></td><td>no</td><td>off (dry-run)</td><td>Required to write; otherwise prints the plan.</td></tr>
+      <tr><td><code>--no-backup</code></td><td>no</td><td>off</td><td>By default an overwritten file is backed up first.</td></tr>
+    </tbody>
+  </table>
+  <div class="pills"><b style="font-size:13px;color:var(--muted)">Invoke:</b>
+    <span>Claude: <code>/feature-structure-creator "&lt;name&gt;"</code></span>
+    <span>Codex: AGENTS.md &rarr; <code>scripts/create.mjs</code></span>
+    <span>Cursor: <code>feature-structure-creator.mdc</code></span></div>
+  <p class="sub"><b>Default is dry-run.</b> Nothing is written unless <code>--write</code> is passed.</p>
+
+  <h2>The schema it produces</h2>
+  <p class="sub">Ported verbatim from the real dossiers. <code># Title</code> &rarr; <code>One-line scope:</code>
+  &rarr; <code>**Group:**</code> &rarr; <code>**Status:**</code> &rarr; then the 8 H2 sections, in order:</p>
+  <table>
+    <thead><tr><th>#</th><th>Section</th></tr></thead>
+    <tbody>
+      <tr><td class="c">1</td><td><code>## Summary</code></td></tr>
+      <tr><td class="c">2</td><td><code>## What it does / mechanics</code></td></tr>
+      <tr><td class="c">3</td><td><code>## How it is built (implementation)</code></td></tr>
+      <tr><td class="c">4</td><td><code>## Data-contract touchpoints</code></td></tr>
+      <tr><td class="c">5</td><td><code>## Model B / rights notes</code></td></tr>
+      <tr><td class="c">6</td><td><code>## Key parameters / values</code></td></tr>
+      <tr><td class="c">7</td><td><code>## Related features</code></td></tr>
+      <tr><td class="c">8</td><td><code>## References</code></td></tr>
+    </tbody>
+  </table>
+  <p class="sub"><b>One metadata syntax only</b> — strict markdown <code>**Group:**</code> / <code>**Status:**</code>
+  (matching all real dossiers), never YAML frontmatter. This fixes the benchmark's header variance.
+  The filename is the <b>slug only</b> (<code>signal-taxonomy.md</code>, not <code>03-signal-taxonomy.md</code>).</p>
+
+  <h2>Output</h2>
+  <ul class="clean">
+    <li class="dot"><code>NN-&lt;slug&gt;/&lt;slug&gt;.md</code> — the dossier on the canonical schema (AI source of truth).</li>
+    <li class="dot"><code>NN-&lt;slug&gt;/&lt;slug&gt;.html</code> — the human view, generated from the <code>.md</code>.</li>
+    <li class="dot"><code>FEATURES.md</code> — one catalog row added (if an index exists).</li>
+    <li class="dot"><code>.feature-creator/backup/&lt;run&gt;/</code> — backups of any overwritten file.</li>
+  </ul>
+  <p class="sub">Empty sections carry dense, instructive <code>_TODO_</code> placeholders. Loop: scaffold &rarr;
+  fill the <code>.md</code> <code>_TODO_</code>s &rarr; re-run to regenerate the <code>.html</code>.</p>
+
+  <h2>Safety &amp; determinism</h2>
+  <ul class="clean">
+    <li class="ok"><b>Dry-run by default.</b> No writes without <code>--write</code>; the plan shows create / update / unchanged.</li>
+    <li class="ok"><b>Validated before write.</b> A schema FAIL blocks <code>--write</code>.</li>
+    <li class="ok"><b>Idempotent.</b> Same name + catalog &rarr; existing number reused, second run writes nothing (no duplicate folder/row).</li>
+    <li class="ok"><b>Backups.</b> Every overwritten file is copied to <code>.feature-creator/backup/&lt;run&gt;/</code> first.</li>
+    <li class="ok"><b>Deterministic.</b> No <code>Math.random</code>/<code>Date</code> in output content; same inputs &rarr; byte-identical output.</li>
+  </ul>
+
+  <h2>How to run</h2>
+  <pre>node tasks/skill-feature-structure-creator/scripts/create.mjs "My Feature" --features-dir lumen-features   # dry-run
+
+node tasks/skill-feature-structure-creator/scripts/create.mjs "My Feature" --features-dir lumen-features \
+  --group "Detection Engine" --status "Specified only" --scope "One-line scope here." --write          # apply
+
+node tasks/skill-feature-structure-creator/scripts/self-test.mjs                                        # idempotency + schema gate</pre>
+  <p class="sub">Self-test builds a throwaway fixture in <code>/tmp/feature-creator-selftest</code>, scaffolds a
+  third dossier next to two existing ones, and asserts numbering, files, the 8 sections in order,
+  one metadata syntax, the generated <code>.html</code>, the index row, and idempotency. <b>PASSED.</b>
+  Example output in <code>example-output/</code>.</p>
+
+  <div class="foot">Feature-structure creator — one generator, three shells (Claude / Codex / Cursor).
+  Full spec &amp; 6 functionality docs: <a href="./README.md">README.md</a>. Pairs with the
+  <a href="../skill-deterministic-checker/">Deterministic Checker</a> (produce &rarr; measure).</div>
+
+</div>
+</body>
+</html>
